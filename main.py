@@ -118,27 +118,79 @@
 
 # soup = BeautifulSoup(src, 'lxml')
 # images = soup.find(class_ = 'description mw-content-ltr en').text[10:]
-
+from urllib import response
 import requests
 from bs4 import BeautifulSoup
-
-# user_input = str(input('Please enter an event name: ').title())
-
-# url_wikipedia = f'https://en.wikipedia.org/wiki/{user_input}'
-
-# r_wikipedia = requests.get(url_wikipedia)
-# soup_wikipedia = BeautifulSoup(r_wikipedia.text, 'lxml')
-# paragraph = soup_wikipedia.find('p').text.strip()
-# print(paragraph)
+import json
 
 
-# state = str(input('Please enter state: '))
-# city = str(input('Please enter city name: '))
-# event_name = str(input('Please enter an event name: '))
-# search = f'https://nominatim.openstreetmap.org/ui/search.html?q={state}+{city}+{event_name}'
-# print(search)
+# User put info about event that they looking for
+state = str(input('Please enter state: '))
+print()
+city = str(input('Please enter city name: '))
+print()
+event_name = str(input('Please enter an event name: '))
+print()
+search = f'https://nominatim.openstreetmap.org/ui/search.html?q={state}+{city}+{event_name}'
 
-r = requests.get('https://nominatim.openstreetmap.org/ui/search.html?q=nevada+carson+museum')
-soup = BeautifulSoup(r.text, 'lxml')
-links = soup.find(class_ ="sidebar svelte-1d53ob0")
-print(links)
+
+# Taking osm id of event, so I can get more data about event
+search_json = requests.get(f'https://nominatim.openstreetmap.org/search.php?q={state}+{city}+{event_name}&format=jsonv2')
+osm_id_data = json.loads(search_json.text)
+osm_id = osm_id_data[0]['osm_id']
+
+
+# All data from json page
+advanced_search_json = requests.get(f'https://nominatim.openstreetmap.org/details.php?osmtype=W&osmid={osm_id}&format=json')
+data = json.loads(advanced_search_json.text)
+
+place_id = data['place_id']
+category = data['category']
+experience_name = data['names']['name']
+address_1 = data['addresstags']['street']
+address_2 = data['addresstags']['housenumber']
+city = data['addresstags']['city']
+state = data['addresstags']['state']
+zip = data['addresstags']['postcode']
+wikipedia_name = data['calculated_wikipedia'][2:]
+
+
+# Taking first paragraph from wikipedia if more then 50 elements, else taking two paragraphs
+wikipedia = requests.get(f'https://en.wikipedia.org/wiki/{wikipedia_name}')
+soup_wikipedia = BeautifulSoup(wikipedia.text, 'lxml')
+paragraph1 = soup_wikipedia.find('p').text.strip()
+
+if len(paragraph1) < 50:
+    paragraph2 = soup_wikipedia.find('p').find_next('p').text.strip()
+try:
+    experience_description = f'{paragraph1}\n\n{paragraph2}'
+except:
+    experience_description = paragraph1
+
+
+# All event images
+images_url = requests.get(f'https://commons.wikimedia.org/wiki/Category{wikipedia_name}')
+soup_images = BeautifulSoup(images_url.text, 'lxml')
+images_wikimedia = soup_images.find('ul', class_ ='gallery mw-gallery-traditional')
+
+list_images = []
+for image in images_wikimedia.find_all('li', class_ = 'gallerybox'):
+    rows = image.find('a').get('href')
+    images = f'https://en.wikipedia.org/{rows}'
+    list_images.append(images)
+
+
+# All data about event
+all_info = {
+    'place_id' : place_id,
+    'category' : category,
+    'experience_name': experience_name,
+    'city' : city,
+    'state' : state,
+    'zip': zip,
+    'address1': address_1,
+    'address2' : address_2,
+    'wikipedia_name' : wikipedia_name,
+    'experience_description' : experience_description,
+    'images' : list_images,
+}
