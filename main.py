@@ -181,6 +181,23 @@ for image in images_wikimedia.find_all('li', class_ = 'gallerybox'):
     list_images.append(images)
 
 
+    # Images description
+    images_description_url = requests.get(f'https://commons.wikimedia.org{images_title}')
+    soup_description = BeautifulSoup(images_description_url.text, 'lxml')
+    try:
+        description_wikimedia = soup_description.find('tbody').find('td', class_ = 'description').find('div', class_ = 'description mw-content-ltr en' )
+        for description in description_wikimedia:
+            description_images = description.text.strip()
+    except Exception:
+        description_wikimedia = soup_description.find('tbody').find('td', class_ = 'description')
+        for description in description_wikimedia:
+            description_images = description.text.strip()
+
+    image_info = f'{images} - {description_images}'
+    print(image_info)
+
+        
+
 
 # All data about event
 all_info = {
@@ -194,17 +211,8 @@ all_info = {
     'address2' : address_2,
     'wikipedia_name' : wikipedia,
     'experience_description' : experience_description,
-    'images' : list_images,
+    'images_info' : list_images,
 }
 
 with open('all_info_json', 'w') as file:
     json.dump(all_info, file, indent=4, ensure_ascii=False)
-
-
-# Images description
-images_description_url = requests.get(f'https://commons.wikimedia.org{images_title}')
-soup_description = BeautifulSoup(images_description_url.text, 'lxml')
-description_wikimedia = soup_description.find('tbody').find('td', class_ = 'description')
-for description in description_wikimedia.find_all('div', class_ = 'description mw-content-ltr en'):
-    images_description = description.text
-    print(images_description)
