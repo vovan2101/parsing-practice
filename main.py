@@ -118,7 +118,7 @@
 
 # soup = BeautifulSoup(src, 'lxml')
 # images = soup.find(class_ = 'description mw-content-ltr en').text[10:]
-from urllib import response
+
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -169,16 +169,17 @@ except:
     experience_description = paragraph1
 
 
-# All event images
+# All event images links and titles
 images_url = requests.get(f'https://commons.wikimedia.org/wiki/Category{wikipedia_name}')
 soup_images = BeautifulSoup(images_url.text, 'lxml')
 images_wikimedia = soup_images.find('ul', class_ ='gallery mw-gallery-traditional')
 
 list_images = []
 for image in images_wikimedia.find_all('li', class_ = 'gallerybox'):
-    rows = image.find('a').get('href')
-    images = f'https://en.wikipedia.org/{rows}'
+    images_title = image.find('a').get('href')
+    images = f'https://en.wikipedia.org/{images_title}'
     list_images.append(images)
+
 
 
 # All data about event
@@ -199,3 +200,11 @@ all_info = {
 with open('all_info_json', 'w') as file:
     json.dump(all_info, file, indent=4, ensure_ascii=False)
 
+
+# Images description
+images_description_url = requests.get(f'https://commons.wikimedia.org{images_title}')
+soup_description = BeautifulSoup(images_description_url.text, 'lxml')
+description_wikimedia = soup_description.find('tbody').find('td', class_ = 'description')
+for description in description_wikimedia.find_all('div', class_ = 'description mw-content-ltr en'):
+    images_description = description.text
+    print(images_description)
