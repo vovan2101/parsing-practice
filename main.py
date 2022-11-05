@@ -156,8 +156,9 @@ wikipedia_name = data['calculated_wikipedia'][2:]
 
 
 # Taking first paragraph from wikipedia if more then 50 elements, else taking two paragraphs
-wikipedia = requests.get(f'https://en.wikipedia.org/wiki/{wikipedia_name}')
-soup_wikipedia = BeautifulSoup(wikipedia.text, 'lxml')
+wikipedia = f'https://en.wikipedia.org/wiki/{wikipedia_name}'
+wikipedia_request = requests.get(wikipedia)
+soup_wikipedia = BeautifulSoup(wikipedia_request.text, 'lxml')
 paragraph1 = soup_wikipedia.find('p').text.strip()
 
 if len(paragraph1) < 50:
@@ -190,7 +191,11 @@ all_info = {
     'zip': zip,
     'address1': address_1,
     'address2' : address_2,
-    'wikipedia_name' : wikipedia_name,
+    'wikipedia_name' : wikipedia,
     'experience_description' : experience_description,
     'images' : list_images,
 }
+
+with open('all_info_json', 'w') as file:
+    json.dump(all_info, file, indent=4, ensure_ascii=False)
+
